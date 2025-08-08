@@ -1,28 +1,27 @@
 // server/models/User.js
+const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const saltRounds = 10;
+const UserSchema = new mongoose.Schema({
+  username: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  phone_number: { type: String },
+  role: { type: String, enum: ['customer', 'technician'], default: 'customer' },
+});
 
-exports.findByEmail = async (pool, email) => {
-  const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
-  return rows[0];
+// Hash the password before saving
+UserSchema.pre('save', async function (next) {
+  if (this.isModified('password')) {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
+  next();
+});
+
+// Compare password method
+UserSchema.methods.comparePassword = function (candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
 };
 
-exports.create = async (pool, userData) => {
-  const { username, email, password, phone_number, role } = userData;
-  const hashedPassword = await bcrypt.hash(password, saltRounds);
-  const [result] = await pool.query(
-    'INSERT INTO users (username, email, password, phone_number, role) VALUES (?, ?, ?, ?, ?)',
-    [username, email, hashedPassword, phone_number, role]
-  );
-  return { id: result.insertId, username, email, phone_number, role };
-};
-
-exports.comparePassword = async (password, hashedPassword) => {
-  return bcrypt.compare(password, hashedPassword);
-};
-
-exports.findById = async (pool, id) => {
-  const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
-  return rows[0];
-};
+const User = mongoose.model('User', UserSchema);
+module.exports = User;

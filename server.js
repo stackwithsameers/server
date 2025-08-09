@@ -16,19 +16,16 @@ app.use(cors());
 const MONGO_URI = process.env.MONGO_URI;
 
 mongoose
-  .connect(MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(MONGO_URI)
   .then(() => {
     console.log("✅ Successfully connected to MongoDB.");
 
-    // ✅ Root route to test server
+    // Root route
     app.get("/", (req, res) => {
       res.send("🚀 Server is live!");
     });
 
-    // API Routes
+    // API routes
     const authRoutes = require("./routes/authRoutes");
     const issueRoutes = require("./routes/issueRoutes");
 

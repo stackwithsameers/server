@@ -1,7 +1,7 @@
 // server/routes/authRoutes.js
 const express = require("express");
 const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+const User = require("../models/User"); // Mongoose User model
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
 const router = express.Router();
@@ -16,33 +16,33 @@ router.post("/register", async (req, res) => {
         .status(400)
         .json({ message: "User with this email already exists." });
     }
-
+    // Ensure role is one of the allowed values, default to 'customer' if not provided or invalid
     const userRole = ["customer", "technician", "admin"].includes(role)
       ? role
       : "customer";
-
     const newUser = new User({
       username,
       email,
-      password, // will be hashed automatically
+      password,
       phone_number,
       role: userRole,
     });
-
     await newUser.save();
-
-    res.status(201).json({
-      message: "User registered successfully",
-      user: {
-        id: newUser._id,
-        username: newUser.username,
-        email: newUser.email,
-        phone_number: newUser.phone_number,
-        role: newUser.role,
-      },
-    });
+    // Return a simplified user object for the client
+    res
+      .status(201)
+      .json({
+        message: "User registered successfully",
+        user: {
+          id: newUser._id,
+          username: newUser.username,
+          email: newUser.email,
+          phone_number: newUser.phone_number,
+          role: newUser.role,
+        },
+      });
   } catch (err) {
-    console.error("Registration error:", err);
+    console.error(err);
     res.status(500).json({ message: "Registration failed." });
   }
 });
@@ -52,10 +52,13 @@ router.post("/login", async (req, res) => {
   const { email, password } = req.body;
   try {
     const user = await User.findOne({ email });
-    if (!user || !(await user.comparePassword(password))) {
+    if (!user) {
       return res.status(400).json({ message: "Invalid credentials." });
     }
-
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials." });
+    }
     const token = jwt.sign(
       {
         id: user._id,
@@ -67,7 +70,6 @@ router.post("/login", async (req, res) => {
       JWT_SECRET,
       { expiresIn: "1h" }
     );
-
     res.json({
       token,
       user: {
@@ -79,7 +81,7 @@ router.post("/login", async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("Login error:", err);
+    console.error(err);
     res.status(500).json({ message: "Login failed." });
   }
 });

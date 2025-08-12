@@ -15,9 +15,13 @@ app.use(cors());
 const MONGO_URI = process.env.MONGO_URI;
 
 mongoose
-  .connect(MONGO_URI)
+  .connect(MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => {
-    console.log("Successfully connected to MongoDB.");
+    console.log("✅ Successfully connected to MongoDB.");
+
     // Routes
     const authRoutes = require("./routes/authRoutes");
     const issueRoutes = require("./routes/issueRoutes");
@@ -25,12 +29,22 @@ mongoose
     app.use("/api/auth", authRoutes);
     app.use("/api/issues", issueRoutes);
 
+    // Root route - useful for testing
+    app.get("/", (req, res) => {
+      res.json({ message: "✅ API is running." });
+    });
+
+    // Catch-all for undefined routes
+    app.use((req, res) => {
+      res.status(404).json({ error: "❌ Endpoint not found" });
+    });
+
     // Start the server
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`🚀 Server running on port ${PORT}`);
     });
   })
   .catch((err) => {
-    console.error("Error connecting to the database:", err.stack);
-    process.exit(1); // Exit process on connection failure
+    console.error("❌ Error connecting to MongoDB:", err.stack);
+    process.exit(1);
   });

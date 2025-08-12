@@ -1,5 +1,4 @@
 // server/server.js
-
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
@@ -18,14 +17,8 @@ const MONGO_URI = process.env.MONGO_URI;
 mongoose
   .connect(MONGO_URI)
   .then(() => {
-    console.log("✅ Successfully connected to MongoDB.");
-
-    // Root route
-    app.get("/", (req, res) => {
-      res.send("🚀 Server is live!");
-    });
-
-    // API routes
+    console.log("Successfully connected to MongoDB.");
+    // Routes
     const authRoutes = require("./routes/authRoutes");
     const issueRoutes = require("./routes/issueRoutes");
 
@@ -34,10 +27,10 @@ mongoose
 
     // Start the server
     app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`Server running on port ${PORT}`);
     });
   })
   .catch((err) => {
-    console.error("❌ Error connecting to the database:", err.message);
-    process.exit(1);
+    console.error("Error connecting to the database:", err.stack);
+    process.exit(1); // Exit process on connection failure
   });
